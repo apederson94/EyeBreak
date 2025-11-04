@@ -18,3 +18,5 @@ static void prv_deinit(void);
 static void prv_window_load(Window *window);
 static void prv_window_unload(Window *window);
 static void prv_setup_state();
+static void prv_wakeup_handler(WakeupId wakeup_id, int32_t cookie);
+static void prv_schedule_wakeup();

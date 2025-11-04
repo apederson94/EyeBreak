@@ -29,11 +29,13 @@ static void prv_setup_state() {
     APP_LOG(APP_LOG_LEVEL_INFO, "STATE: s_timer_state = %d", s_timer_state);
 }
 
-static void prv_init(void) {
+static void prv_init() {
   prv_setup_state();
+  wakeup_service_subscribe(prv_wakeup_handler);
 
   prv_timer_toggle_state();
   app_message_open(256, 256);
+  prv_schedule_wakeup();
 
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
@@ -68,7 +70,7 @@ static void prv_exit_delay() {
   int timeout = preferred_result_display_duration();
 
   // After the timeout, exit the application
-  AppTimer *timer = app_timer_register(timeout, prv_exit_application, NULL);
+  app_timer_register(timeout, prv_exit_application, NULL);
 }
 
 static void prv_exit_application(void *data) {
@@ -125,9 +127,6 @@ static void prv_update_app_glance(AppGlanceReloadSession *session, size_t limit,
   // Check we haven't exceeded system limit of AppGlance's
   if (limit < 1) return;
 
-  // Retrieve the current Lockitron state from context
-  TimerState *timer_state = context;
-
   char time_buffer[8];
   clock_copy_time_string(time_buffer, sizeof(time_buffer));
 
@@ -152,7 +151,6 @@ static void prv_update_app_glance(AppGlanceReloadSession *session, size_t limit,
 
 // Generate a string to display the Lockitron state
 static void prv_timer_status_message(TimerState *state) {
-  char buf[50];
   time_t future = time(NULL);
 
   switch(*state) {
@@ -189,4 +187,39 @@ static void prv_timer_status_message(TimerState *state) {
       strncpy(s_glance, "OFF", sizeof(s_glance));
       return;
   }
+}
+
+// figure out why wakeup also turns off the app. probably something I don't understand about wakeups
+// might need to create some var that holds a flag that says whether or not this was a wakeup or something like that
+// wakeups shouldn't do the same thing as non-wakeups, so will need to figure out that piece
+// probably needs to go in prv_init
+// should also explore using notifications to see if that is any better, but wakeups will work for now
+static void prv_wakeup_handler(WakeupId wakeup_id, int32_t cookie) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WOKE UP %d", cookie);
+    s_timer_state = cookie;
+    prv_schedule_wakeup();
+    app_glance_reload(prv_update_app_glance, &s_timer_state);
+}
+
+static void prv_schedule_wakeup() {
+    time_t wakeup_time = time(NULL);
+    int32_t new_state;
+    switch (s_timer_state) {
+        case TIMER_SCREEN:
+          APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WAKEUP TIMER_SCREEN");
+          wakeup_time += 20; // 20 minutes
+          new_state = TIMER_REST;
+          break;
+        case TIMER_REST:
+          APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WAKEUP TIMER_REST");
+          wakeup_time += 30; // 30 seconds
+          new_state = TIMER_SCREEN;
+          break;
+        default:
+          APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WAKEUP DEFAULT / CANCEL");
+          return;
+    }
+
+    WakeupId id = wakeup_schedule(wakeup_time, new_state, false);
+    APP_LOG(APP_LOG_LEVEL_INFO, "STATE: wakeup id %d", id);
 }
