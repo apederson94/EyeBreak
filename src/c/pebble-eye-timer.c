@@ -7,6 +7,7 @@
 // #define MESSAGE_KEY_LOCK_STATE = "pebble_eye_timer_lock_state"
 // #define MESSAGE_KEY_APP_READY = "pebble_eye_timer_ready"
 static uint32_t KEY_STATE = 0;
+static uint32_t KEY_NEXT_STATE = 0;
 
 static Window *s_window;
 static TimerState s_timer_state;
@@ -31,11 +32,26 @@ static void prv_setup_state() {
 
 static void prv_init() {
   prv_setup_state();
-  wakeup_service_subscribe(prv_wakeup_handler);
 
-  prv_timer_toggle_state();
+  if (launch_reason() != APP_LAUNCH_WAKEUP) {
+      prv_timer_toggle_state();
+
+      if (s_timer_state == TIMER_OFF) {
+          wakeup_cancel_all();
+      }
+
+      persist_write_int(KEY_STATE, s_timer_state);
+  } else {
+      TimerState new_state = persist_read_int(KEY_NEXT_STATE);
+      persist_delete(KEY_NEXT_STATE);
+      s_timer_state = new_state;
+
+      APP_LOG(APP_LOG_LEVEL_INFO, "STATE: NEW s_timer_state = %d", s_timer_state);
+  }
+
+
+
   app_message_open(256, 256);
-  prv_schedule_wakeup();
 
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
@@ -43,6 +59,9 @@ static void prv_init() {
     .unload = prv_window_unload,
   });
   window_stack_push(s_window, false);
+
+  wakeup_service_subscribe(prv_wakeup_handler);
+  prv_schedule_wakeup();
 }
 
 static void prv_window_load(Window *window) {
@@ -113,13 +132,8 @@ static void prv_window_unload(Window *window) {
 }
 
 static void prv_deinit(void) {
-  // Before the application terminates, setup the AppGlance and store state
-  prv_update_stored_state();
+  // Before the application terminates, setup the AppGlance
   app_glance_reload(prv_update_app_glance, &s_timer_state);
-}
-
-static void prv_update_stored_state() {
-    persist_write_int(KEY_STATE, s_timer_state);
 }
 
 // Create the AppGlance displayed in the system launcher
@@ -194,11 +208,8 @@ static void prv_timer_status_message(TimerState *state) {
 // wakeups shouldn't do the same thing as non-wakeups, so will need to figure out that piece
 // probably needs to go in prv_init
 // should also explore using notifications to see if that is any better, but wakeups will work for now
-static void prv_wakeup_handler(WakeupId wakeup_id, int32_t cookie) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WOKE UP %d", cookie);
-    s_timer_state = cookie;
-    prv_schedule_wakeup();
-    app_glance_reload(prv_update_app_glance, &s_timer_state);
+static void prv_wakeup_handler(WakeupId wakeup_id, int32_t reason) {
+    // do nothing
 }
 
 static void prv_schedule_wakeup() {
@@ -206,12 +217,12 @@ static void prv_schedule_wakeup() {
     int32_t new_state;
     switch (s_timer_state) {
         case TIMER_SCREEN:
-          APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WAKEUP TIMER_SCREEN");
-          wakeup_time += 20; // 20 minutes
+          APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WAKEUP TIMER_SCREEN, NEW: %d", TIMER_REST);
+          wakeup_time += 20 * 60; // 20 minutes
           new_state = TIMER_REST;
           break;
         case TIMER_REST:
-          APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WAKEUP TIMER_REST");
+          APP_LOG(APP_LOG_LEVEL_INFO, "STATE: WAKEUP TIMER_REST, NEW: %d", TIMER_SCREEN);
           wakeup_time += 30; // 30 seconds
           new_state = TIMER_SCREEN;
           break;
@@ -220,6 +231,8 @@ static void prv_schedule_wakeup() {
           return;
     }
 
-    WakeupId id = wakeup_schedule(wakeup_time, new_state, false);
+    persist_write_int(KEY_NEXT_STATE, new_state);
+
+    WakeupId id = wakeup_schedule(wakeup_time, 0, false);
     APP_LOG(APP_LOG_LEVEL_INFO, "STATE: wakeup id %d", id);
 }
