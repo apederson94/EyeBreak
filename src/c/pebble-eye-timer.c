@@ -1,11 +1,6 @@
 #include <pebble.h>
 #include "pebble-eye-timer.h"
 
-// Virtual Lockitron settings (https://api.lockitron.com/v1/getting_started/virtual_locks)
-// #define LOCKITRON_LOCK_UUID "95c22a11-4c9e-4420-adf0-11f1b36575f2"
-// #define LOCKITRON_ACCESS_TOKEN "99e75a775fe737bb716caf88f161460bb623d283c3561c833480f0834335668b"
-// #define MESSAGE_KEY_LOCK_STATE = "pebble_eye_timer_lock_state"
-// #define MESSAGE_KEY_APP_READY = "pebble_eye_timer_ready"
 static uint32_t KEY_STATE = 0;
 static uint32_t KEY_NEXT_STATE = 0;
 
@@ -169,10 +164,10 @@ static void prv_timer_status_message(TimerState *state) {
 
   switch(*state) {
     case TIMER_SCREEN:
-      future += 20 * 60;  // 20 min ahead
+      future += 20 * 60 * 1000;  // 20 min ahead
       break;
     case TIMER_REST:
-      future += 30;  // 30 sec ahead
+      future += 30 * 1000;  // 30 sec ahead
       break;
     default:
       strncpy(s_glance, "OFF", sizeof(s_glance));
