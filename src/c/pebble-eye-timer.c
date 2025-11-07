@@ -59,20 +59,33 @@ static void prv_init() {
   prv_schedule_wakeup();
 }
 
+static void prv_draw_main_text(Window *window) {
+    Layer *window_layer = window_get_root_layer(window);
+    GRect bounds = layer_get_bounds(window_layer);
+
+    //Create a TextLayer to show the result
+    s_txt_layer = text_layer_create(GRect(0, (bounds.size.h/2)-30, bounds.size.w, 60));
+    text_layer_set_background_color(s_txt_layer, GColorClear);
+    text_layer_set_text_color(s_txt_layer, GColorBlack);
+    text_layer_set_font(s_txt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_text_alignment(s_txt_layer, GTextAlignmentCenter);
+
+    prv_timer_status_message(&s_timer_state);
+    text_layer_set_text(s_txt_layer, s_glance);
+    layer_add_child(window_layer, text_layer_get_layer(s_txt_layer));
+}
+
+static void prv_draw_action_bar(Window *window) {
+    ActionBar action_bar = action_bar_layer_create();
+    action_bar_layer_add_to_window(s_action_bar, window);
+    GBitmap play_icon = gbitmap_create_with_resource(RESOURCE_ID_ICON_PLAY);
+    GBitmap pause_icon = gbitmap_create_with_resource(RESOURCE_ID_ICON_PAUSE);
+    action_bar_set_icon(action_bar, BUTTON_ID_SELECT, play_icon);
+}
+
 static void prv_window_load(Window *window) {
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
-
-  //Create a TextLayer to show the result
-  s_txt_layer = text_layer_create(GRect(0, (bounds.size.h/2)-30, bounds.size.w, 60));
-  text_layer_set_background_color(s_txt_layer, GColorClear);
-  text_layer_set_text_color(s_txt_layer, GColorBlack);
-  text_layer_set_font(s_txt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  text_layer_set_text_alignment(s_txt_layer, GTextAlignmentCenter);
-
-  prv_timer_status_message(&s_timer_state);
-  text_layer_set_text(s_txt_layer, s_glance);
-  layer_add_child(window_layer, text_layer_get_layer(s_txt_layer));
+  prv_draw_main_text(window);
+  prv_draw_action_bar(window);
 
   prv_vibe_alert();
 
@@ -231,3 +244,7 @@ static void prv_schedule_wakeup() {
     WakeupId id = wakeup_schedule(wakeup_time, 0, false);
     APP_LOG(APP_LOG_LEVEL_INFO, "STATE: wakeup id %d", id);
 }
+
+// static void click_config_provider(void *context) {
+//   window_single_click_subscribe(BUTTON_ID_UP, (ClickHandler) my_previous_click_handler);
+// }
