@@ -13,17 +13,12 @@
     "sdkVersion": "3",
     "enableMultiJS": false,
     "targetPlatforms": [
-      "basalt",
-      "chalk",
-      "diorite"
+      "flint",
+      "emery"
     ],
     "watchapp": {
       "watchface": false
     },
-    "messageKeys": [
-      "APP_READY",
-      "LOCK_STATE"
-    ],
     "resources": {
       "media": [
         {
@@ -35,6 +30,28 @@
           "type": "png",
           "name": "ICON_PAUSE",
           "file": "images/pause.png"
+        },
+        {
+          "type": "png",
+          "name": "ICON_WORK",
+          "file": "images/work.png"
+        },
+        {
+          "type": "png",
+          "name": "ICON_REST",
+          "file": "images/rest.png"
+        }
+      ],
+      "publishedMedia": [
+        {
+          "name": "GLANCE_WORK",
+          "id": 1,
+          "glance": "ICON_WORK"
+        },
+        {
+          "name": "GLANCE_REST",
+          "id": 2,
+          "glance": "ICON_REST"
         }
       ]
     }

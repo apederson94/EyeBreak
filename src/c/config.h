@@ -1,0 +1,27 @@
+#pragma once
+
+#include <pebble.h>
+
+#define EYE_WORK_SECONDS (20 * 60)
+#define EYE_REST_SECONDS (20 * 60)
+
+#define EYE_WAKEUP_DISPLAY_MS 4000
+
+#define EYE_PERSIST_KEY_STATE 1
+#define EYE_PERSIST_KEY_END_TIME 2
+
+#define EYE_DEBUG_FAST_INTERVALS 0
+#define EYE_DEBUG_LOGS 0
+
+#if EYE_DEBUG_FAST_INTERVALS
+#undef EYE_WORK_SECONDS
+#undef EYE_REST_SECONDS
+#define EYE_WORK_SECONDS 10
+#define EYE_REST_SECONDS 10
+#endif
+
+#if EYE_DEBUG_LOGS
+#define EYE_LOG(...) APP_LOG(APP_LOG_LEVEL_INFO, __VA_ARGS__)
+#else
+#define EYE_LOG(...) ((void)0)
+#endif
