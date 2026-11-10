@@ -17,7 +17,7 @@ static GBitmap *s_icon_pause;
 static AppTimer *s_exit_timer;
 static TimerState s_theme_state = TIMER_OFF;
 static bool s_theme_valid = false;
-static char s_time_buf[16];
+static char s_time_buf[32];
 
 static GColor prv_window_color(TimerState state) {
   switch (state) {
@@ -125,7 +125,9 @@ static void prv_refresh(void) {
       text_layer_set_font(s_time_layer,
                           fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
       text_layer_set_text(s_phase_layer, "EYETIMER");
-      text_layer_set_text(s_footer_layer, "20m work / 20m rest");
+      snprintf(s_time_buf, sizeof(s_time_buf), "%dm work / %ds rest",
+               EYE_WORK_SECONDS / 60, EYE_REST_SECONDS);
+      text_layer_set_text(s_footer_layer, s_time_buf);
       layer_set_hidden(text_layer_get_layer(s_footer_layer), false);
       layer_set_hidden(s_progress_layer, true);
     } else {
@@ -176,6 +178,7 @@ static void prv_feedback_for_state(void) {
 
 static void prv_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   eye_timer_advance_if_due();
+  eye_timer_ensure_wakeup();
   bool changed = eye_timer_consume_changed();
 
   prv_refresh();
@@ -191,7 +194,7 @@ static void prv_select_click(ClickRecognizerRef recognizer, void *context) {
   prv_refresh();
 
   if (running) {
-    feedback_work();
+    prv_feedback_for_state();
   }
 
   app_glance_update();
