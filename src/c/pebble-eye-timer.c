@@ -11,7 +11,6 @@ int main(void) {
 
   app_event_loop();
 
-  app_glance_update();
   eye_timer_deinit();
   ui_deinit();
 }

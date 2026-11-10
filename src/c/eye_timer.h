@@ -20,5 +20,6 @@ time_t eye_timer_end_time(void);
 void eye_timer_start(void);
 void eye_timer_stop(void);
 bool eye_timer_toggle(void);
+void eye_timer_ensure_wakeup(void);
 bool eye_timer_advance_if_due(void);
 bool eye_timer_consume_changed(void);

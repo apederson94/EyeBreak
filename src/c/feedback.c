@@ -1,3 +1,5 @@
+#include <pebble.h>
+
 #include "feedback.h"
 #include "config.h"
 
