@@ -151,6 +151,19 @@ static void test_prv_advance_calc_guard_past_due_fallback(void) {
   PASS();
 }
 
+static void test_prv_advance_calc_rebases_to_now_when_delayed(void) {
+  TimerState state = TIMER_WORK;
+  time_t end_time = 1300; /* WORK ended 13s ago */
+  time_t now = 1313;
+
+  TEST("prv_advance_calc delayed WORK->REST rebases to now + duration");
+  prv_advance_calc(&state, &end_time, now);
+  assert(state == TIMER_REST);
+  assert(end_time == now + 20); /* 1333, not 1320 */
+  assert(end_time > now);
+  PASS();
+}
+
 /* ============================================================================
  * main
  * ============================================================================ */
@@ -166,6 +179,7 @@ int main(void) {
   test_prv_advance_calc_rest_to_work();
   test_prv_advance_calc_guard_stops_before_now();
   test_prv_advance_calc_guard_past_due_fallback();
+  test_prv_advance_calc_rebases_to_now_when_delayed();
 
   printf("\n===================\n");
   printf("Results: %d/%d tests passed\n", s_tests_passed, s_tests_run);

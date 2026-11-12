@@ -92,6 +92,7 @@ static void prv_schedule_wakeup(void) {
 
 static void prv_advance_calc(TimerState *state, time_t *end_time, time_t now) {
   int guard = 0;
+  const time_t old_end_time = *end_time;
 
   do {
     *state = (*state == TIMER_WORK) ? TIMER_REST : TIMER_WORK;
@@ -100,6 +101,10 @@ static void prv_advance_calc(TimerState *state, time_t *end_time, time_t now) {
   } while (*end_time <= now && guard < 1000);
 
   if (*end_time <= now) {
+    *end_time = now + prv_duration_for(*state);
+  } else if (old_end_time > 0) {
+    /* Rebase to now so the new phase isn't short-changed by wakeup/launch
+     * latency when the previous phase ran past its end_time while asleep. */
     *end_time = now + prv_duration_for(*state);
   }
 }
