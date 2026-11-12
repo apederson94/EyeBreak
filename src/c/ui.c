@@ -237,8 +237,9 @@ static void prv_window_load(Window *window) {
   text_layer_set_text_alignment(s_footer_layer, GTextAlignmentCenter);
   layer_add_child(root, text_layer_get_layer(s_footer_layer));
 
+  int bar_top = bounds.size.h - bounds.size.h / 10;
   s_progress_layer = layer_create(
-      GRect(8, bounds.size.h - 14, content_width - 16, 6));
+      GRect(8, bar_top, content_width - 16, 10));
   layer_set_update_proc(s_progress_layer, prv_progress_update_proc);
   layer_add_child(root, s_progress_layer);
 
